@@ -2,105 +2,139 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>우철이네 미술관</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #0e0a06; overflow: hidden; font-family: "Segoe UI", sans-serif; }
-#c { display: block; width: 100vw; height: 100vh; cursor: grab; }
-#c:active { cursor: grabbing; }
-#hud {
-  position: fixed; top: 16px; left: 16px;
-  background: rgba(10,6,2,0.92); border: 2px solid #c8903c; border-radius: 12px;
-  padding: 12px 16px; color: #f0e0a0; font-size: 12px; line-height: 2.1;
-  pointer-events: none;
-}
-#hud .title { font-size: 15px; font-weight: bold; color: #f5e060; margin-bottom: 3px; border-bottom: 1px solid #c8903c55; padding-bottom: 4px; letter-spacing: 0.05em; }
-#hud .sub   { font-size: 10px; color: #a08040; margin-bottom: 5px; }
-#hud .key   { background: rgba(255,200,80,0.10); border: 1px solid #c8903c44; border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #f0d080; }
-#badge {
-  position: fixed; top: 16px; right: 16px;
-  background: rgba(10,6,2,0.92); border: 2px solid #c8903c; border-radius: 12px;
-  padding: 10px 16px; text-align: right; pointer-events: none;
-}
-#badge .num { font-size: 22px; font-weight: bold; color: #f5e060; }
+body { background: #0e0a06; overflow: hidden; font-family: "Segoe UI", sans-serif; touch-action: none; }
+#c { display: block; width: 100vw; height: 100vh; }
 
-/* bottom info bar */
+/* HUD — 처음엔 보이다가 3초 후 fade out */
+#hud {
+  position: fixed; top: 12px; left: 12px;
+  background: rgba(10,6,2,0.92); border: 2px solid #c8903c; border-radius: 12px;
+  padding: 10px 14px; color: #f0e0a0; font-size: 11px; line-height: 2.0;
+  pointer-events: none; transition: opacity 1.2s ease;
+  z-index: 20;
+}
+#hud.hidden { opacity: 0; }
+#hud .title { font-size: 14px; font-weight: bold; color: #f5e060; margin-bottom: 3px; border-bottom: 1px solid #c8903c55; padding-bottom: 3px; }
+#hud .sub   { font-size: 10px; color: #a08040; margin-bottom: 4px; }
+#hud .key   { background: rgba(255,200,80,0.10); border: 1px solid #c8903c44; border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #f0d080; }
+
+#badge {
+  position: fixed; top: 12px; right: 12px;
+  background: rgba(10,6,2,0.92); border: 2px solid #c8903c; border-radius: 12px;
+  padding: 8px 14px; text-align: right; pointer-events: none;
+  transition: opacity 1.2s ease; z-index: 20;
+}
+#badge.hidden { opacity: 0; }
+#badge .num { font-size: 20px; font-weight: bold; color: #f5e060; }
+
+/* 가상 조이스틱 */
+#joystick-zone {
+  position: fixed; bottom: 32px; left: 32px;
+  width: 130px; height: 130px;
+  z-index: 50; touch-action: none; user-select: none;
+  display: none; /* JS로 touch 감지 시 표시 */
+}
+#joystick-base {
+  width: 130px; height: 130px; border-radius: 50%;
+  background: rgba(200,144,60,0.10);
+  border: 2px solid rgba(200,144,60,0.30);
+  position: absolute; top: 0; left: 0;
+}
+#joystick-knob {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(200,144,60,0.50);
+  border: 2px solid rgba(240,210,100,0.65);
+  position: absolute;
+  top: 39px; left: 39px;
+}
+
+/* 하단 info bar */
 #info-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, rgba(6,3,1,0.98) 65%, transparent);
-  padding: 14px 48px 22px; display: none; pointer-events: none;
+  padding: 10px 24px 18px; display: none; pointer-events: none; z-index: 40;
 }
-#info-bar .inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
-#info-bar .approach { font-size: 11px; color: #c8a050; letter-spacing: 0.1em; margin-bottom: 3px; }
-#info-bar .art-title  { font-size: 20px; font-weight: bold; color: #f5e060; }
-#info-bar .art-meta   { font-size: 12px; color: #d0a858; margin-top: 2px; }
-#info-bar .art-desc   { font-size: 12px; color: #c8b880; line-height: 1.75; margin-top: 5px; max-width: 500px; }
-#info-bar .art-museum { font-size: 10px; color: #806830; margin-top: 5px; }
+#info-bar .inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+#info-bar .approach { font-size: 10px; color: #c8a050; letter-spacing: 0.08em; margin-bottom: 2px; }
+#info-bar .art-title  { font-size: 17px; font-weight: bold; color: #f5e060; }
+#info-bar .art-meta   { font-size: 11px; color: #d0a858; margin-top: 2px; }
+#info-bar .art-desc   { font-size: 11px; color: #c8b880; line-height: 1.7; margin-top: 4px; max-width: 460px; }
+#info-bar .art-museum { font-size: 10px; color: #806830; margin-top: 4px; }
 #info-bar .enter-btn  {
-  flex-shrink: 0; background: rgba(200,144,60,0.2); border: 1.5px solid #c8903c;
-  border-radius: 8px; padding: 10px 18px; color: #f0d080; font-size: 12px;
-  cursor: pointer; pointer-events: all; white-space: nowrap; transition: background 0.2s;
+  flex-shrink: 0; background: rgba(200,144,60,0.22); border: 1.5px solid #c8903c;
+  border-radius: 8px; padding: 10px 16px; color: #f0d080; font-size: 12px;
+  cursor: pointer; pointer-events: all; white-space: nowrap;
 }
-#info-bar .enter-btn:hover { background: rgba(200,144,60,0.42); }
 
-/* modal */
+/* 모달 */
 #modal {
   position: fixed; inset: 0; background: rgba(3,1,0,0.96);
   display: none; align-items: center; justify-content: center;
-  z-index: 100; cursor: pointer;
+  z-index: 100; touch-action: auto;
 }
 #modal-inner {
-  max-width: 90vw; max-height: 92vh;
-  display: flex; flex-direction: column; align-items: center; gap: 18px;
-  cursor: default; animation: scIn 0.25s cubic-bezier(0.22,1,0.36,1);
+  max-width: 92vw; max-height: 92vh;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  animation: scIn 0.22s cubic-bezier(0.22,1,0.36,1);
 }
 @keyframes scIn { from{transform:scale(0.90);opacity:0} to{transform:scale(1);opacity:1} }
 #modal-img-wrap { position: relative; }
 #modal-img {
-  display: block; max-width: 84vw; max-height: 68vh; object-fit: contain;
-  border: 4px solid #c8a030;
-  box-shadow: 0 0 80px rgba(180,140,40,0.30), 0 0 160px rgba(160,80,10,0.16);
+  display: block; max-width: 88vw; max-height: 62vh; object-fit: contain;
+  border: 3px solid #c8a030;
+  box-shadow: 0 0 60px rgba(180,140,40,0.28);
 }
 #modal-close {
-  position: absolute; top: -14px; right: -14px;
+  position: absolute; top: -13px; right: -13px;
   width: 28px; height: 28px; border-radius: 50%;
   background: #c8903c; color: #0a0600; font-size: 14px; font-weight: bold;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border: none;
+  cursor: pointer; border: none; z-index: 101;
 }
-#modal-label { text-align: center; }
-#modal-label .mt { font-size: 22px; font-weight: bold; color: #f5e060; margin-bottom: 4px; }
-#modal-label .ms { font-size: 13px; color: #d0a858; margin-bottom: 7px; }
-#modal-label .md { font-size: 13px; color: #c0b07a; max-width: 580px; line-height: 1.8; }
+#modal-label { text-align: center; padding: 0 12px; }
+#modal-label .mt { font-size: 20px; font-weight: bold; color: #f5e060; margin-bottom: 4px; }
+#modal-label .ms { font-size: 12px; color: #d0a858; margin-bottom: 6px; }
+#modal-label .md { font-size: 12px; color: #c0b07a; max-width: 560px; line-height: 1.8; }
 #modal-label .mm { font-size: 10px; color: #806830; margin-top: 6px; }
 
+/* 입장 힌트 */
 #hint {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
   background: rgba(8,5,1,0.97); border: 2px solid #f5e060; border-radius: 16px;
-  padding: 24px 40px; text-align: center; color: #f0e0a0;
+  padding: 22px 36px; text-align: center; color: #f0e0a0;
   pointer-events: none; transition: opacity 0.6s; z-index: 10;
 }
-#hint h2 { color: #f5e060; font-size: 22px; margin-bottom: 3px; }
-#hint .sub2 { font-size: 11px; color: #a08848; margin-bottom: 10px; }
-#hint p { font-size: 13px; color: #c8b070; line-height: 2.1; }
+#hint h2 { color: #f5e060; font-size: 20px; margin-bottom: 3px; }
+#hint .sub2 { font-size: 10px; color: #a08848; margin-bottom: 8px; }
+#hint p { font-size: 12px; color: #c8b070; line-height: 2.1; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+
 <div id="hud">
   <div class="title">🏛 우철이네 미술관</div>
   <div class="sub">정우철 컬렉션</div>
-  <span class="key">W A S D</span> 이동<br>
-  <span class="key">마우스 드래그</span> 시점 회전<br>
-  <span class="key">스크롤</span> 줌 인/아웃<br>
-  작품 앞에 가까이 서보세요
+  <span class="key">W A S D</span> 이동 &nbsp;
+  <span class="key">드래그</span> 시점<br>
+  <span class="key">스크롤</span> 줌 &nbsp; 작품 앞에 가보세요
 </div>
 <div id="badge">
-  <div style="font-size:10px;color:#a08040;margin-bottom:2px">COLLECTION</div>
+  <div style="font-size:10px;color:#a08040;margin-bottom:1px">COLLECTION</div>
   <div class="num">10</div>
   <div style="font-size:10px;color:#806830">작품</div>
 </div>
+
+<!-- 가상 조이스틱 -->
+<div id="joystick-zone">
+  <div id="joystick-base"></div>
+  <div id="joystick-knob"></div>
+</div>
+
 <div id="info-bar">
   <div class="inner">
     <div style="flex:1">
@@ -110,9 +144,10 @@ body { background: #0e0a06; overflow: hidden; font-family: "Segoe UI", sans-seri
       <div class="art-desc"   id="ib-desc"></div>
       <div class="art-museum" id="ib-museum"></div>
     </div>
-    <button class="enter-btn" id="view-btn" onclick="openModal()">🔍 크게 보기</button>
+    <button class="enter-btn" onclick="openModal()">🔍 크게 보기</button>
   </div>
 </div>
+
 <div id="modal" onclick="closeModal()">
   <div id="modal-inner" onclick="event.stopPropagation()">
     <div id="modal-img-wrap">
@@ -127,12 +162,13 @@ body { background: #0e0a06; overflow: hidden; font-family: "Segoe UI", sans-seri
     </div>
   </div>
 </div>
+
 <div id="hint">
   <h2>🏛 우철이네 미술관</h2>
   <div class="sub2">정우철 컬렉션</div>
-  <p>클릭 후 <b>WASD</b> 이동<br>
-  <b>마우스 드래그</b> 자유 시점 회전<br>
-  <span style="font-size:11px;color:#807040">작품 앞에 가까이 가면 자동으로 감상 창이 열려요</span></p>
+  <p>터치/드래그로 시점 회전<br>
+  조이스틱으로 이동<br>
+  <span style="font-size:10px;color:#807040">작품 앞에 가까이 가면 감상 창이 열려요</span></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -196,48 +232,35 @@ renderer.toneMapping = THREE.NoToneMapping;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e0906);
-// Dense fog — room feels dark and intimate
 scene.fog = new THREE.FogExp2(0x0e0906, 0.055);
 
 const camera = new THREE.PerspectiveCamera(56, window.innerWidth/window.innerHeight, 0.1, 60);
 
-// ── Lighting — DARK room, bright artwork ───────────
-// Very low ambient — just enough to see walls exist
+// ── Lighting ───────────────────────────────────────
 scene.add(new THREE.AmbientLight(0x1a1008, 1.0));
-
-// Dim hemisphere so floor has a hint of warmth
 scene.add(new THREE.HemisphereLight(0x2a1a08, 0x080402, 0.4));
+const sun = new THREE.DirectionalLight(0xfff5e0, 0.3);
+sun.position.set(0,6,0); scene.add(sun);
 
-// Ceiling point lights — intentionally dim for mood
 const cpPos = [[-6,-6],[-6,0],[-6,6],[0,-6],[0,0],[0,6],[6,-6],[6,0],[6,6]];
 cpPos.forEach(([x,z])=>{
-  const pl = new THREE.PointLight(0xffe8b0, 0.12, 10);
-  pl.position.set(x, WH-0.3, z);
-  scene.add(pl);
-  const fix = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5,0.05,0.5),
-    new THREE.MeshBasicMaterial({color:0xffeebb})
-  );
-  fix.position.set(x, WH-0.03, z);
-  scene.add(fix);
+  const pl = new THREE.PointLight(0xffe8b0, 0.10, 10);
+  pl.position.set(x, WH-0.3, z); scene.add(pl);
+  const fix = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.05,0.5),
+    new THREE.MeshBasicMaterial({color:0xffeebb}));
+  fix.position.set(x, WH-0.03, z); scene.add(fix);
 });
 
-// Per-artwork spotlight — bright & focused, like real museum track lighting
-// Paintings use MeshBasicMaterial so they ignore scene lights entirely,
-// but we still add spotlights so the WALL and FRAME around each painting glows
 ART_POS.forEach(({wall, along})=>{
   const {x, z, rotY} = wallTransform(wall, along);
   const nx = Math.sin(rotY), nz = Math.cos(rotY);
-  // Spot aimed at the painting from above-front
   const spot = new THREE.SpotLight(0xfff0c8, 3.5, 5.5, Math.PI/7, 0.3);
   spot.position.set(x - nx*1.5, WH - 0.4, z - nz*1.5);
   spot.target.position.set(x, 2.2, z);
-  scene.add(spot);
-  scene.add(spot.target);
+  scene.add(spot); scene.add(spot.target);
 });
 
 // ── Floor ──────────────────────────────────────────
-// Darker floor to feel like a real gallery at night
 const tileA = new THREE.MeshLambertMaterial({color:0x3a2a14});
 const tileB = new THREE.MeshLambertMaterial({color:0x2e2010});
 for(let i=-5;i<=5;i++) for(let j=-5;j<=5;j++){
@@ -253,34 +276,27 @@ const wMatFB=new THREE.MeshLambertMaterial({color:0x2a1008});
 const wMatLR=new THREE.MeshLambertMaterial({color:0x220e06});
 function mkW(x,y,z,w,h,d,mat){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-  m.position.set(x,y,z); scene.add(m); return m;
+  m.position.set(x,y,z); scene.add(m);
 }
 mkW(0,WH/2,-RD/2, RW,WH,WT, wMatFB);
 mkW(0,WH/2, RD/2, RW,WH,WT, wMatFB);
 mkW(-RW/2,WH/2,0, WT,WH,RD, wMatLR);
 mkW( RW/2,WH/2,0, WT,WH,RD, wMatLR);
-
 const ceilMesh=new THREE.Mesh(new THREE.PlaneGeometry(RW,RD),
   new THREE.MeshLambertMaterial({color:0x0c0804}));
 ceilMesh.rotation.x=Math.PI/2; ceilMesh.position.y=WH; scene.add(ceilMesh);
 
-// Gold molding — subtle accent
 const moldMat=new THREE.MeshLambertMaterial({color:0x5a3a10});
 const skirtMat=new THREE.MeshLambertMaterial({color:0x3a2208});
-mkW(0,3.1,-RD/2+WT/2+0.03, RW,0.06,0.06, moldMat);
-mkW(0,3.1, RD/2-WT/2-0.03, RW,0.06,0.06, moldMat);
-mkW(-RW/2+WT/2+0.03,3.1,0, 0.06,0.06,RD, moldMat);
-mkW( RW/2-WT/2-0.03,3.1,0, 0.06,0.06,RD, moldMat);
-mkW(0,0.09,-RD/2+WT/2+0.03, RW,0.16,0.06, skirtMat);
-mkW(0,0.09, RD/2-WT/2-0.03, RW,0.16,0.06, skirtMat);
-mkW(-RW/2+WT/2+0.03,0.09,0, 0.06,0.16,RD, skirtMat);
-mkW( RW/2-WT/2-0.03,0.09,0, 0.06,0.16,RD, skirtMat);
+mkW(0,3.1,-RD/2+WT/2+0.03,RW,0.06,0.06,moldMat); mkW(0,3.1,RD/2-WT/2-0.03,RW,0.06,0.06,moldMat);
+mkW(-RW/2+WT/2+0.03,3.1,0,0.06,0.06,RD,moldMat); mkW(RW/2-WT/2-0.03,3.1,0,0.06,0.06,RD,moldMat);
+mkW(0,0.09,-RD/2+WT/2+0.03,RW,0.16,0.06,skirtMat); mkW(0,0.09,RD/2-WT/2-0.03,RW,0.16,0.06,skirtMat);
+mkW(-RW/2+WT/2+0.03,0.09,0,0.06,0.16,RD,skirtMat); mkW(RW/2-WT/2-0.03,0.09,0,0.06,0.16,RD,skirtMat);
 
 // ── Benches ────────────────────────────────────────
 function bench(x,z,ry=0){
   const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; scene.add(g);
-  const s=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.10,0.65),
-    new THREE.MeshLambertMaterial({color:0x3a2210}));
+  const s=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.10,0.65),new THREE.MeshLambertMaterial({color:0x3a2210}));
   s.position.y=0.48; g.add(s);
   const lm=new THREE.MeshLambertMaterial({color:0x281508});
   [[-0.8,0.27],[0.8,0.27],[-0.8,-0.27],[0.8,-0.27]].forEach(([lx,lz])=>{
@@ -293,27 +309,17 @@ bench(0,3.0); bench(0,-3.0); bench(-6,0,Math.PI/2); bench(6,0,Math.PI/2);
 // ── Artworks ───────────────────────────────────────
 const artMeshes=[];
 const texLoader=new THREE.TextureLoader();
-
 ART_POS.forEach(({artIdx,wall,along})=>{
   const art=ARTWORKS[artIdx];
   const {x,z,rotY}=wallTransform(wall,along);
   const nx=Math.sin(rotY), nz=Math.cos(rotY);
-
   const tex=texLoader.load(IMGS[art.key]);
   tex.encoding=THREE.sRGBEncoding;
-
   const FW=art.w+0.26, FH=art.h+0.26;
-  const frame=new THREE.Mesh(new THREE.BoxGeometry(FW,FH,0.12),
-    new THREE.MeshLambertMaterial({color:0xa06818}));
-  const lip=new THREE.Mesh(new THREE.BoxGeometry(FW-0.06,FH-0.06,0.125),
-    new THREE.MeshLambertMaterial({color:0xc89028}));
-
-  // MeshBasicMaterial — painting is always full brightness, ignores all scene lighting
-  const painting=new THREE.Mesh(new THREE.PlaneGeometry(art.w,art.h),
-    new THREE.MeshBasicMaterial({map:tex}));
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(FW,FH,0.12),new THREE.MeshLambertMaterial({color:0xa06818}));
+  const lip=new THREE.Mesh(new THREE.BoxGeometry(FW-0.06,FH-0.06,0.125),new THREE.MeshLambertMaterial({color:0xc89028}));
+  const painting=new THREE.Mesh(new THREE.PlaneGeometry(art.w,art.h),new THREE.MeshBasicMaterial({map:tex}));
   painting.position.z=0.065;
-
-  // label plate
   const lc=document.createElement('canvas'); lc.width=512; lc.height=72;
   const lctx=lc.getContext('2d');
   lctx.fillStyle='rgba(6,3,1,0.92)'; lctx.fillRect(0,0,512,72);
@@ -324,35 +330,95 @@ ART_POS.forEach(({artIdx,wall,along})=>{
   const label=new THREE.Mesh(new THREE.PlaneGeometry(art.w*0.88,0.28),
     new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc),transparent:true}));
   label.position.set(0,-art.h/2-0.22,0.065);
-
   const grp=new THREE.Group();
   grp.add(frame); grp.add(lip); grp.add(painting); grp.add(label);
-  grp.position.set(x+nx*0.10, 2.2, z+nz*0.10);
+  grp.position.set(x+nx*0.10,2.2,z+nz*0.10);
   grp.rotation.y=rotY;
   scene.add(grp);
-
-  artMeshes.push({grp, art, worldPos:grp.position.clone()});
+  artMeshes.push({grp,art,worldPos:grp.position.clone()});
 });
 
 // ── Player ─────────────────────────────────────────
 const player=new THREE.Group(); player.position.set(0,0,5); scene.add(player);
 function addBox(w,h,d,color,px,py,pz){
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
-    new THREE.MeshLambertMaterial({color}));
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color}));
   m.position.set(px,py,pz); player.add(m); return m;
 }
-const bodyM=addBox(0.52,0.58,0.34,0x8b1a1a, 0,0.57,0);
-addBox(0.48,0.44,0.44,0xf0c890,              0,1.10,0);
-addBox(0.50,0.20,0.46,0x2a1a0a,              0,1.28,0);
-addBox(0.36,0.09,0.12,0xf0d020,              0,1.40,0);
-const legL=addBox(0.18,0.30,0.18,0x1a0a0a, -0.13,0.15,0);
-const legR=addBox(0.18,0.30,0.18,0x1a0a0a,  0.13,0.15,0);
+const bodyM=addBox(0.52,0.58,0.34,0x8b1a1a,0,0.57,0);
+addBox(0.48,0.44,0.44,0xf0c890,0,1.10,0);
+addBox(0.50,0.20,0.46,0x2a1a0a,0,1.28,0);
+addBox(0.36,0.09,0.12,0xf0d020,0,1.40,0);
+const legL=addBox(0.18,0.30,0.18,0x1a0a0a,-0.13,0.15,0);
+const legR=addBox(0.18,0.30,0.18,0x1a0a0a, 0.13,0.15,0);
 
-// ── Camera orbit ───────────────────────────────────
+// ── HUD 자동 숨김 (3초 후) ──────────────────────────
+setTimeout(()=>{
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('badge').classList.add('hidden');
+}, 3000);
+
+// ── 터치 감지 → 조이스틱 표시 ─────────────────────
+let isTouchDevice = false;
+window.addEventListener('touchstart', ()=>{
+  if(!isTouchDevice){
+    isTouchDevice = true;
+    document.getElementById('joystick-zone').style.display = 'block';
+  }
+}, {once: false});
+
+// ── 가상 조이스틱 ──────────────────────────────────
+const joyZone  = document.getElementById('joystick-zone');
+const joyKnob  = document.getElementById('joystick-knob');
+const JR = 65; // base radius
+const KR = 26; // knob radius
+let joyActive = false;
+let joyTouchId = null;
+let joyVec = {x:0, y:0}; // -1~1
+
+joyZone.addEventListener('touchstart', e=>{
+  e.stopPropagation();
+  const t = e.changedTouches[0];
+  joyTouchId = t.identifier;
+  joyActive = true;
+  updateJoy(t);
+},{passive:true});
+
+window.addEventListener('touchmove', e=>{
+  if(!joyActive) return;
+  for(const t of e.changedTouches){
+    if(t.identifier === joyTouchId){ updateJoy(t); break; }
+  }
+},{passive:true});
+
+window.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier === joyTouchId){
+      joyActive = false; joyVec={x:0,y:0};
+      joyKnob.style.transform='translate(0,0)';
+      break;
+    }
+  }
+});
+
+function updateJoy(touch){
+  const rect = joyZone.getBoundingClientRect();
+  const cx = rect.left + JR, cy = rect.top + JR;
+  let dx = touch.clientX - cx;
+  let dy = touch.clientY - cy;
+  const dist = Math.sqrt(dx*dx+dy*dy);
+  if(dist > JR){ dx = dx/dist*JR; dy = dy/dist*JR; }
+  joyVec = {x: dx/JR, y: dy/JR};
+  joyKnob.style.transform = `translate(${dx}px,${dy}px)`;
+}
+
+// ── 카메라 드래그 (오른쪽 터치 or 마우스) ─────────
 let camDist=8, camH=0, camV=0.44;
 let drag=false, lmx=0, lmy=0;
+let camTouchId=null;
+
 const cv=document.getElementById('c');
 
+// 마우스
 cv.addEventListener('mousedown',e=>{ drag=true; lmx=e.clientX; lmy=e.clientY; hideHint(); });
 window.addEventListener('mousemove',e=>{
   if(!drag)return;
@@ -362,14 +428,37 @@ window.addEventListener('mousemove',e=>{
 });
 window.addEventListener('mouseup',()=>drag=false);
 cv.addEventListener('wheel',e=>camDist=Math.max(2.5,Math.min(18,camDist+e.deltaY*0.012)));
-cv.addEventListener('touchstart',e=>{ drag=true; lmx=e.touches[0].clientX; lmy=e.touches[0].clientY; hideHint(); });
-window.addEventListener('touchmove',e=>{
-  if(!drag)return;
-  camH-=(e.touches[0].clientX-lmx)*0.007;
-  camV=Math.max(0.08,Math.min(0.80,camV+(e.touches[0].clientY-lmy)*0.005));
-  lmx=e.touches[0].clientX; lmy=e.touches[0].clientY;
+
+// 터치 — 조이스틱이 아닌 터치는 카메라 조작
+cv.addEventListener('touchstart',e=>{
+  hideHint();
+  for(const t of e.changedTouches){
+    // 조이스틱 영역 터치는 무시
+    const jRect = joyZone.getBoundingClientRect();
+    const inJoy = t.clientX>=jRect.left && t.clientX<=jRect.right &&
+                  t.clientY>=jRect.top  && t.clientY<=jRect.bottom;
+    if(!inJoy && camTouchId===null){
+      camTouchId=t.identifier; lmx=t.clientX; lmy=t.clientY; drag=true; break;
+    }
+  }
 },{passive:true});
-window.addEventListener('touchend',()=>drag=false);
+
+window.addEventListener('touchmove',e=>{
+  if(!drag || camTouchId===null)return;
+  for(const t of e.changedTouches){
+    if(t.identifier===camTouchId){
+      camH-=(t.clientX-lmx)*0.007;
+      camV=Math.max(0.08,Math.min(0.80,camV+(t.clientY-lmy)*0.005));
+      lmx=t.clientX; lmy=t.clientY; break;
+    }
+  }
+},{passive:true});
+
+window.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===camTouchId){ drag=false; camTouchId=null; break; }
+  }
+});
 
 const keys={};
 window.addEventListener('keydown',e=>{
@@ -385,13 +474,10 @@ function hideHint(){
 }
 
 // ── Modal ──────────────────────────────────────────
-let currentArt=null;
-let modalJustOpened=false; // prevent double-open flicker
-
+let currentArt=null, autoOpened=false, modalJustOpened=false;
 function openModal(){
-  if(!currentArt || modalJustOpened)return;
-  modalJustOpened=true;
-  setTimeout(()=>modalJustOpened=false, 800);
+  if(!currentArt||modalJustOpened)return;
+  modalJustOpened=true; setTimeout(()=>modalJustOpened=false,800);
   const a=currentArt.art;
   document.getElementById('modal-img').src=IMGS[a.key];
   document.getElementById('ml-title').textContent=a.title;
@@ -403,12 +489,9 @@ function openModal(){
 function closeModal(){ document.getElementById('modal').style.display='none'; }
 window.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); });
 
-// ── Near-artwork detection ─────────────────────────
-const INFO_DIST  = 4.0;   // show info bar
-const AUTO_DIST  = 2.2;   // auto-open modal
+// ── Near artwork ───────────────────────────────────
+const INFO_DIST=4.0, AUTO_DIST=2.2;
 let nearArt=null;
-let autoOpened=false;     // only fire once per approach
-
 function checkNear(){
   let found=null, best=INFO_DIST;
   for(const am of artMeshes){
@@ -417,8 +500,6 @@ function checkNear(){
     const d=Math.sqrt(dx*dx+dz*dz);
     if(d<best){best=d;found=am;}
   }
-
-  // Info bar toggle
   if(found!==nearArt){
     nearArt=found; currentArt=found; autoOpened=false;
     const bar=document.getElementById('info-bar');
@@ -429,15 +510,10 @@ function checkNear(){
       document.getElementById('ib-desc').textContent=a.desc;
       document.getElementById('ib-museum').textContent='📍 '+a.museum;
       bar.style.display='block';
-    } else {
-      bar.style.display='none';
-    }
+    } else bar.style.display='none';
   }
-
-  // Auto-open modal when very close (once per approach)
-  if(found && !autoOpened && best < AUTO_DIST){
-    autoOpened=true;
-    openModal();
+  if(found&&!autoOpened&&best<AUTO_DIST){
+    autoOpened=true; openModal();
   }
 }
 
@@ -446,13 +522,23 @@ let lastT=0, walkT=0;
 function animate(ts){
   const dt=Math.min((ts-lastT)/1000,0.05); lastT=ts;
 
+  // 이동: 키보드 OR 조이스틱
   const fwd=new THREE.Vector3(Math.sin(camH),0,Math.cos(camH));
   const rgt=new THREE.Vector3(Math.cos(camH),0,-Math.sin(camH));
   const mv=new THREE.Vector3();
+
   if(keys['w']||keys['W']||keys['ArrowUp'])    mv.sub(fwd);
   if(keys['s']||keys['S']||keys['ArrowDown'])  mv.add(fwd);
   if(keys['a']||keys['A']||keys['ArrowLeft'])  mv.sub(rgt);
   if(keys['d']||keys['D']||keys['ArrowRight']) mv.add(rgt);
+
+  // 조이스틱
+  if(joyActive && (Math.abs(joyVec.x)>0.08 || Math.abs(joyVec.y)>0.08)){
+    // joystick Y → forward/back,  X → strafe
+    mv.sub(fwd.clone().multiplyScalar(-joyVec.y));
+    mv.sub(rgt.clone().multiplyScalar(-joyVec.x));
+  }
+
   if(mv.lengthSq()>0){
     mv.normalize().multiplyScalar(4.5*dt);
     player.position.x=Math.max(-RW/2+0.6,Math.min(RW/2-0.6,player.position.x+mv.x));
@@ -468,7 +554,6 @@ function animate(ts){
 
   checkNear();
 
-  // Simple orbit — no auto-lerp, no camera magic, just follows player
   const px=player.position.x, py=1.0, pz=player.position.z;
   camera.position.set(
     px+camDist*Math.sin(camH)*Math.cos(camV),
@@ -476,7 +561,6 @@ function animate(ts){
     pz+camDist*Math.cos(camH)*Math.cos(camV)
   );
   camera.lookAt(px,py,pz);
-
   renderer.render(scene,camera);
   requestAnimationFrame(animate);
 }
